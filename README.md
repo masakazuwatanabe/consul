@@ -4,9 +4,9 @@ consul container. (env args)
 
 ## type
 
- - consul (default ver)
- - consul-client (client args ver)
- - consul-server (server args ver)
+ - consul (env args default ver)
+ - consul-client (env args client ver)
+ - consul-server (env args server ver)
 
 ## tags latest (consul 0.6)
 
