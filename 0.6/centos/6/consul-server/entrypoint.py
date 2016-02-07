@@ -264,7 +264,7 @@ def main():
     if val is not None:
         boot_config["http_api_response_headers"] = val
 
-    val = get_value(config=environ, key="CONSUL_LEAVE_ON_TERMINATE")
+    val = get_bool(config=environ, key="CONSUL_LEAVE_ON_TERMINATE")
     if val is not None:
         boot_config["leave_on_terminate"] = val
 
