@@ -199,7 +199,6 @@ def main():
     if val is not None:
         boot_config["datacenter"] = val
 
-
     val = get_value(config=environ, key="CONSUL_DATA_DIR")
     if val is not None:
         boot_config["data_dir"] = val
@@ -216,7 +215,7 @@ def main():
     if val is not None:
         boot_config["disable_update_check"] = val
 
-    val = get_value(config=environ, key="CONSUL_DNS_CONFIG_ALLOW_STALE")
+    val = get_bool(config=environ, key="CONSUL_DNS_CONFIG_ALLOW_STALE")
     if val is not None:
         boot_config["dns_config"]["allow_stale"] = val
 
