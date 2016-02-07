@@ -15,23 +15,31 @@ consul container. (env args)
  - consul-server:latest (consul-server latest centos7 ver)
 
 ## tags latest (consul 0.6) other
+
  - consul:latest-centos7 (consul latest centos7 ver)
  - consul:latest-centos6 (consul latest centos6 ver)
- - consul-client:latest-centos7 (consul latest centos7 ver)
- - consul-client:latest-centos6 (consul latest centos6 ver)
- - consul-server:latest-centos7 (consul latest centos7 ver)
- - consul-server:latest-centos6 (consul latest centos6 ver) 
+ - consul:latest-alpine (consul latest alpine ver)
+ - consul-client:latest-centos7 (consul-client latest centos7 ver)
+ - consul-client:latest-centos6 (consul-client latest centos6 ver)
+ - consul-client:latest-alpine (consul-client latest alpine ver)
+ - consul-server:latest-centos7 (consul-server latest centos7 ver)
+ - consul-server:latest-centos6 (consul-server latest centos6 ver)
+ - consul-server:latest-alpine (consul-server latest alpine ver)  
 
 ## tags 0.6
+
  - consul:0.6 (consul 0.6 centos7 ver)
  - consul:0.6-centos7 (consul 0.6 centos7 ver)
  - consul:0.6-centos6 (consul 0.6 centos6 ver)
+ - consul:0.6-alpine (consul 0.6 alpine ver)
  - consul-client:0.6 (consul-client 0.6 centos7 ver)
  - consul-client:0.6-centos7 (consul-client 0.6 centos7 ver)
  - consul-client:0.6-centos6 (consul-client 0.6 centos6 ver)
+ - consul-client:0.6-alpine (consul-client 0.6 alpine ver)
  - consul-server:0.6 (consul-server 0.6 centos7 ver) 
  - consul-server:0.6-centos7 (consul-server 0.6 centos7 ver) 
- - consul-server:0.6-centos6 (consul-server 0.6 centos6 ver) 
+ - consul-server:0.6-centos6 (consul-server 0.6 centos6 ver)
+ - consul-server:0.6-alpine (consul-server 0.6 alpine ver)  
 
 ## environment
 

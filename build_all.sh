@@ -43,6 +43,18 @@ cd ${DIR_CURRENT}/0.6/centos/7/consul-server
 docker build -t docker.io/masakazuwatanabe/consul-server:latest-centos6 .
 
 
+################################################################################
+# consul latest / alpine ver.
+################################################################################
+cd ${DIR_CURRENT}/0.6/alpine/consul
+docker build -t docker.io/masakazuwatanabe/consul:latest-alpine .
+
+cd ${DIR_CURRENT}/0.6/alpine/consul-client
+docker build -t docker.io/masakazuwatanabe/consul-client:latest-alpine .
+
+cd ${DIR_CURRENT}/0.6/alpine/consul-server
+docker build -t docker.io/masakazuwatanabe/consul-server:latest-alpine .
+
 
 
 ################################################################################
@@ -71,7 +83,6 @@ cd ${DIR_CURRENT}/0.6/centos/7/consul-server
 docker build -t docker.io/masakazuwatanabe/consul-server:0.6-centos7 .
 
 
-
 ################################################################################
 # consul 0.6 / centos 6 ver.
 ################################################################################
@@ -85,6 +96,17 @@ cd ${DIR_CURRENT}/0.6/centos/6/consul-server:0.6
 docker build -t docker.io/masakazuwatanabe/consul-server:0.6-centos6 .
 
 
+################################################################################
+# consul 0.6 / alpine ver.
+################################################################################
+cd ${DIR_CURRENT}/0.6/alpine/consul
+docker build -t docker.io/masakazuwatanabe/consul:0.6-alpine .
+
+cd ${DIR_CURRENT}/0.6/alpine/consul-client
+docker build -t docker.io/masakazuwatanabe/consul-client:0.6-alpine .
+
+cd ${DIR_CURRENT}/0.6/alpine/consul-server
+docker build -t docker.io/masakazuwatanabe/consul-server:0.6-alpine .
 
 
 
