@@ -5,27 +5,121 @@
 import os
 import sys
 import json
+from subprocess import Popen
+from subprocess import PIPE
 
 
 ENTRY_CMD="/usr/local/bin/consul"
 BOOT_CONFIG="boot_config.json"
 
 
-def get_value(config, key, default=None):
+TABLE_CONFIG = \
+{
+    "CONSUL_ACL_DATACENTER":              { "type": "str",  "key": ["acl_datacenter"]                              },
+    "CONSUL_ACL_DEFAULT_POLICY":          { "type": "str",  "key": ["acl_default_policy"]                          },
+    "CONSUL_ACL_DOWN_POLICY":             { "type": "str",  "key": ["acl_down_policy"]                             },
+    "CONSUL_ACL_MASTER_TOKEN":            { "type": "str",  "key": ["acl_master_token"]                            },
+    "CONSUL_ACL_MASTER_TOKEN":            { "type": "str",  "key": ["acl_master_token"]                            },
+    "CONSUL_ACL_TOKEN":                   { "type": "str",  "key": ["acl_token"]                                   },
+    "CONSUL_ACL_TTL":                     { "type": "str",  "key": ["acl_ttl"]                                     },
+    "CONSUL_ADDRESSES_DNS":               { "type": "str",  "key": ["addresses", "dns"]                            },
+    "CONSUL_ADDRESSES_HTTP":              { "type": "str",  "key": ["addresses", "http"]                           },
+    "CONSUL_ADDRESSES_HTTPS":             { "type": "str",  "key": ["addresses", "https"]                          },
+    "CONSUL_ADDRESSES_RPC":               { "type": "str",  "key": ["addresses", "rpc"]                            },
+    "CONSUL_ADVERTISE_ADDR":              { "type": "str",  "key": ["advertise_addr"]                              },
+    "CONSUL_ADVERTISE_ADDRS_SERF_LAN":    { "type": "str",  "key": ["advertise_addrs", "serf_lan"]                 },
+    "CONSUL_ADVERTISE_ADDRS_SERF_WAN":    { "type": "str",  "key": ["advertise_addrs", "serf_wan"]                 },
+    "CONSUL_ADVERTISE_ADDRS_RPC":         { "type": "str",  "key": ["advertise_addrs", "rpc"]                      },
+    "CONSUL_ADVERTISE_ADDR_WAN":          { "type": "str",  "key": ["advertise_addr_wan"]                          },
+    "CONSUL_ATLAS_ACL_TOKEN":             { "type": "str",  "key": ["atlas_acl_token"]                             },
+    "CONSUL_ATLAS_INFRASTRUCTURE":        { "type": "str",  "key": ["atlas_infrastructure"]                        },
+    "CONSUL_ATLAS_JOIN":                  { "type": "str",  "key": ["atlas_join"]                                  },
+    "CONSUL_ATLAS_TOKEN":                 { "type": "str",  "key": ["atlas_token"]                                 },
+    "CONSUL_ATLAS_ENDPOINT":              { "type": "str",  "key": ["atlas_endpoint"]                              },
+    "CONSUL_BOOTSTRAP":                   { "type": "bool", "key": ["bootstrap"]                                   },
+    "CONSUL_BOOTSTRAP_EXPECT":            { "type": "str",  "key": ["bootstrap_expect"]                            },
+    "CONSUL_BIND_ADDR":                   { "type": "str",  "key": ["bind_addr"]                                   },
+    "CONSUL_CA_FILE":                     { "type": "str",  "key": ["ca_file"]                                     },
+    "CONSUL_CERT_FILE":                   { "type": "str",  "key": ["cert_file"]                                   },
+    "CONSUL_CHECK_UPDATE_INTERVAL":       { "type": "str",  "key": ["check_update_interval"]                       },
+    "CONSUL_CLIENT_ADDR":                 { "type": "str",  "key": ["client_addr"]                                 },
+#    "CONSUL_CONFIG_DIR":                  { "type": "str",  "key": ["config_dir"]                                  },
+    "CONSUL_DATACENTER":                  { "type": "str",  "key": ["datacenter"]                                  },
+    "CONSUL_DATA_DIR":                    { "type": "str",  "key": ["data_dir"]                                    },
+    "CONSUL_DEV":                         { "type": "bool", "key": ["dev"]                                         },
+    "CONSUL_DISABLE_ANONYMOUS_SIGNATURE": { "type": "bool", "key": ["disable_anonymous_signature"]                 },
+    "CONSUL_DISABLE_REMOTE_EXEC":         { "type": "bool", "key": ["disable_remote_exec"]                         },
+    "CONSUL_DISABLE_UPDATE_CHECK":        { "type": "bool", "key": ["disable_update_check"]                        },
+    "CONSUL_DNS_CONFIG_ALLOW_STALE":      { "type": "bool", "key": ["dns_config", "allow_stale"]                   },
+    "CONSUL_DNS_CONFIG_MAX_STALE":        { "type": "str",  "key": ["dns_config", "max_stale"]                     },
+    "CONSUL_DNS_CONFIG_NODE_TTL":         { "type": "str",  "key": ["dns_config", "node_ttl"]                      },
+    "CONSUL_DNS_CONFIG_SERVICE_TTL":      { "type": "kv",   "key": ["dns_config", "service_ttl"]                   },
+    "CONSUL_DNS_CONFIG_ENABLE_TRUNCATE":  { "type": "bool", "key": ["dns_config", "enable_truncate"]               },
+    "CONSUL_DNS_CONFIG_ONLY_PASSING":     { "type": "bool", "key": ["dns_config", "only_passing"]                  },
+    "CONSUL_DOMAIN":                      { "type": "str",  "key": ["domain"]                                      },
+    "CONSUL_ENABLE_DEBUG":                { "type": "bool", "key": ["enable_debug"]                                },
+    "CONSUL_ENABLE_SYSLOG":               { "type": "bool", "key": ["enable_syslog"]                               },
+    "CONSUL_ENCRYPT":                     { "type": "str",  "key": ["encrypt"]                                     },
+    "CONSUL_KEY_FILE":                    { "type": "str",  "key": ["key_file"]                                    },
+    "CONSUL_HTTP_API_RESPONSE_HEADERS":   { "type": "kv",   "key": ["http_api_response_headers"]                   },
+    "CONSUL_LEAVE_ON_TERMINATE":          { "type": "bool", "key": ["leave_on_terminate"]                          },
+    "CONSUL_LOG_LEVEL":                   { "type": "str",  "key": ["log_level"]                                   },
+    "CONSUL_NODE_NAME":                   { "type": "str",  "key": ["node_name"]                                   },
+    "CONSUL_PORTS_DNS":                   { "type": "str",  "key": ["ports", "dns"]                                },
+    "CONSUL_PORTS_HTTP":                  { "type": "str",  "key": ["ports", "http"]                               },
+    "CONSUL_PORTS_HTTPS":                 { "type": "str",  "key": ["ports", "https"]                              },
+    "CONSUL_PORTS_RPC":                   { "type": "str",  "key": ["ports", "rpc"]                                },
+    "CONSUL_PORTS_SERF_LAN":              { "type": "str",  "key": ["ports", "serf_lan"]                           },
+    "CONSUL_PORTS_SERF_WAN":              { "type": "str",  "key": ["ports", "serf_wan"]                           },
+    "CONSUL_PORTS_SERVER":                { "type": "str",  "key": ["server"]                                      },
+    "CONSUL_PROTOCOL":                    { "type": "str",  "key": ["protocol"]                                    },
+    "CONSUL_REAP":                        { "type": "bool", "key": ["reap"]                                        },
+    "CONSUL_RECURSOR":                    { "type": "str",  "key": ["recursor"]                                    },
+    "CONSUL_RECURSORS":                   { "type": "list", "key": ["recursors"]                                   },
+    "CONSUL_REJOIN_AFTER_LEAVE":          { "type": "bool", "key": ["rejoin_after_leave"]                          },
+    "CONSUL_RETRY_JOIN":                  { "type": "list", "key": ["retry_join"]                                  },
+    "CONSUL_RETRY_INTERVAL":              { "type": "str",  "key": ["retry_interval"]                              },
+    "CONSUL_RETRY_JOIN_WAN":              { "type": "list", "key": ["retry_join_wan"]                              },
+    "CONSUL_RETRY_INTERVAL_WAN":          { "type": "str",  "key": ["retry_interval_wan"]                          },
+    "CONSUL_SERVER":                      { "type": "bool", "key": ["server"]                                      },
+    "CONSUL_SERVER_NAME":                 { "type": "str",  "key": ["server_name"]                                 },
+    "CONSUL_SESSION_TTL_MIN":             { "type": "str",  "key": ["session_ttl_min"]                             },
+    "CONSUL_SKIP_LEAVE_ON_INTERRUPT":     { "type": "bool", "key": ["skip_leave_on_interrupt"]                     },
+    "CONSUL_START_JOIN":                  { "type": "str",  "key": ["start_join"]                                  },
+    "CONSUL_START_JOIN_WAN":              { "type": "str",  "key": ["start_join_wan"]                              },
+    "CONSUL_STATSD_ADDR":                 { "type": "str",  "key": ["statsd_addr"]                                 },
+    "CONSUL_DOGSTATSD_ADDR":              { "type": "str",  "key": ["dogstatsd_addr"]                              },
+    "CONSUL_DOGSTATSD_TAGS":              { "type": "list", "key": ["dogstatsd_tags"]                              },
+    "CONSUL_STATSITE_ADDR":               { "type": "str",  "key": ["statsite_addr"]                               },
+    "CONSUL_STATSITE_PREFIX":             { "type": "str",  "key": ["statsite_prefix"]                             },
+    "CONSUL_SYSLOG_FACILITY":             { "type": "str",  "key": ["syslog_facility"]                             },
+    "CONSUL_UI":                          { "type": "bool", "key": ["ui"]                                          },
+    "CONSUL_UI_DIR":                      { "type": "str",  "key": ["ui_dir"]                                      },
+    "CONSUL_UNIX_SOCKETS_USER":           { "type": "str",  "key": ["unix_sockets", "user"]                        },
+    "CONSUL_UNIX_SOCKETS_GROUP":          { "type": "str",  "key": ["unix_sockets", "group"]                       },
+    "CONSUL_UNIX_SOCKETS_MODE":           { "type": "str",  "key": ["unix_sockets", "mode"]                        },
+    "CONSUL_VERIFY_INCOMING":             { "type": "bool", "key": ["verify_incoming"]                             },
+    "CONSUL_VERIFY_OUTGOING":             { "type": "bool", "key": ["verify_outgoing"]                             },
+    "CONSUL_VERIFY_SERVER_HOSTNAME":      { "type": "bool", "key": ["verify_server_hostname"]                      },
+#    "CONSUL_WATCHES":                     { "type": "list", "key": ["watches"]                                     },
+}
+
+
+def get_str(val, default=None):
     try:
-        if key not in config or config[key] == "":
+        if val is None:
             return default
-        return config[key]
+        return str(val)
     except:
         raise
 
 
-def get_bool(config, key, default=None):
+def get_bool(val, default=None):
     try:
-        if key not in config or config[key] == "":
+        if val is None:
             return default
 
-        val = str(config[key]).lower()
+        val = str(val).lower()
         if val in ("true", "yes", "on"):
             val = True
         elif val in ("false", "no", "off"):
@@ -38,24 +132,25 @@ def get_bool(config, key, default=None):
         raise
 
 
-def get_list(config, key, default=None):
+def get_list(val, default=None):
     try:
-        if key not in config or config[key] == "":
+        if val is None:
             return default
 
-        vals = str(config[key]).split(",")
+        vals = str(val).split(",")
+
         return vals if 0 < len(vals) else None
     except:
         raise
 
 
-def get_kv_list(config, key, default=None):
+def get_kv(val, default=None):
     try:
-        if key not in config or config[key] == "":
+        if val is None:
             return default
 
         result = {}
-        vals = str(config[key]).split(",")
+        vals = str(val).split(",")
         for val in vals:
             val = val.split("=")
             k = val[0]
@@ -67,13 +162,56 @@ def get_kv_list(config, key, default=None):
         raise
 
 
+def build_values(environ, table, config):
+    try:
+        for env_key, env_val in environ.items():
+            if env_key in table and env_val is not None and env_val != "":
+                attr = table[env_key]
+                type = attr["type"]
+                keys = attr["key"]
+                n_keys = len(keys)
+                if n_keys < 1:
+                    continue
+
+                val = None
+                if type == "str":
+                    val = get_str(env_val)
+                elif type == "bool":
+                    val = get_bool(env_val)
+                elif type == "list":
+                    val = get_list(env_val)
+                elif type == "kv":
+                    val = get_kv(env_val)
+
+                update_base = {}
+                update_cur = update_base
+                for i, key in enumerate(keys):
+                    if i == (n_keys - 1):
+                        update_cur[key] = val
+                    else:
+                        update_cur[key] = {}
+                        update_cur = update_cur[key]
+                config.update(update_base)
+    except:
+        raise
+
+
+def is_enable(environ, key):
+    if key in environ and environ[key] is not None and environ[key] != "":
+        return True
+    return False
+
+
 
 
 def main():
 
-    # config_dir
     environ = os.environ
-    config_dir = get_value(config=environ, key="CONSUL_CONFIG_DIR", default="/var/lib/consul/config")
+
+    # config_dir
+    config_dir = "/var/lib/consul/config"
+    if "CONSUL_CONFIG_DIR" in environ:
+        config_dir = str(environ["CONSUL_CONFIG_DIR"])
     path_boot_config = os.path.join(config_dir, BOOT_CONFIG)
 
     # load exists config.
@@ -83,359 +221,86 @@ def main():
             boot_config = json.loads(rfp.read())
 
 
-    val = get_value(config=environ, key="CONSUL_ACL_DATACENTER")
-    if val is not None:
-        boot_config["acl_datacenter"] = val
+    # build environment configuration.
+    build_values(environ=environ, table=TABLE_CONFIG, config=boot_config)
 
-    val = get_value(config=environ, key="CONSUL_ACL_DEFAULT_POLICY")
-    if val is not None:
-        boot_config["acl_default_policy"] = val
 
-    val = get_value(config=environ, key="CONSUL_ACL_DOWN_POLICY")
-    if val is not None:
-        boot_config["acl_down_policy"] = val
+    # extra configuration =====================================================
 
-    val = get_value(config=environ, key="CONSUL_ACL_MASTER_TOKEN")
-    if val is not None:
-        boot_config["acl_master_token"] = val
-
-    val = get_value(config=environ, key="CONSUL_ACL_MASTER_TOKEN")
-    if val is not None:
-        boot_config["acl_master_token"] = val
-
-    val = get_value(config=environ, key="CONSUL_ACL_TOKEN")
-    if val is not None:
-        boot_config["acl_token"] = val
-
-    val = get_value(config=environ, key="CONSUL_ACL_TTL")
-    if val is not None:
-        boot_config["acl_ttl"] = val
-
-    val = get_value(config=environ, key="CONSUL_ADDRESSES_DNS")
-    if val is not None:
-        boot_config["addresses"]["dns"] = val
-
-    val = get_value(config=environ, key="CONSUL_ADDRESSES_HTTP")
-    if val is not None:
-        boot_config["addresses"]["http"] = val
-
-    val = get_value(config=environ, key="CONSUL_ADDRESSES_HTTPS")
-    if val is not None:
-        boot_config["addresses"]["https"] = val
-
-    val = get_value(config=environ, key="CONSUL_ADDRESSES_RPC")
-    if val is not None:
-        boot_config["addresses"]["rpc"] = val
-
-    val = get_value(config=environ, key="CONSUL_ADVERTISE_ADDR")
-    if val is not None:
+    if is_enable(environ=environ, key="CONSUL_EX_ADVERTISE_ADDR"):
+        val = get_str(environ["CONSUL_EX_ADVERTISE_ADDR"])
+        val = str(Popen(val, stdout=PIPE, shell=True).communicate()[0]).strip()
         boot_config["advertise_addr"] = val
 
-    val = get_value(config=environ, key="CONSUL_ADVERTISE_ADDRS_SERF_LAN")
-    if val is not None:
-        boot_config["advertise_addrs"]["serf_lan"] = val
 
-    val = get_value(config=environ, key="CONSUL_ADVERTISE_ADDRS_SERF_WAN")
-    if val is not None:
-        boot_config["advertise_addrs"]["serf_wan"] = val
+    if is_enable(environ=environ, key="CONSUL_EX_ADVERTISE_ADDRS_SERF_LAN"):
+        val = get_str(environ["CONSUL_EX_ADVERTISE_ADDRS_SERF_LAN"])
+        val = str(Popen(val, stdout=PIPE, shell=True).communicate()[0]).strip()
+        update_ip, sep, update_port = val.partition(":")
 
-    val = get_value(config=environ, key="CONSUL_ADVERTISE_ADDRS_RPC")
-    if val is not None:
-        boot_config["advertise_addrs"]["rpc"] = val
+        base_ip = sep = base_port = None
+        if "advertise_addrs" in boot_config and "serf_lan" in boot_config["advertise_addrs"]:
+            base_val = boot_config["advertise_addrs"]["serf_lan"]
+            base_ip,  sep, base_port = base_val.partition(":")
 
-    val = get_value(config=environ, key="CONSUL_ADVERTISE_ADDR_WAN")
-    if val is not None:
+        update_ip = update_ip if update_ip != "" else base_ip
+        update_port = update_port if update_port != "" else base_port
+        boot_config["advertise_addrs"]["serf_lan"] = update_ip + ":" + update_port
+
+
+    if is_enable(environ=environ, key="CONSUL_EX_ADVERTISE_ADDRS_SERF_WAN"):
+        val = get_str(environ["CONSUL_EX_ADVERTISE_ADDRS_SERF_WAN"])
+        val = str(Popen(val, stdout=PIPE, shell=True).communicate()[0]).strip()
+        update_ip, sep, update_port = val.partition(":")
+
+        base_ip = sep = base_port = None
+        if "advertise_addrs" in boot_config and "serf_wan" in boot_config["advertise_addrs"]:
+            base_val = boot_config["advertise_addrs"]["serf_wan"]
+            base_ip,  sep, base_port = base_val.partition(":")
+
+        update_ip = update_ip if update_ip != "" else base_ip
+        update_port = update_port if update_port != "" else base_port
+        boot_config["advertise_addrs"]["serf_wan"] = update_ip + ":" + update_port
+
+
+    if is_enable(environ=environ, key="CONSUL_EX_ADVERTISE_ADDRS_SERF_RPC"):
+        val = get_str(environ["CONSUL_EX_ADVERTISE_ADDRS_SERF_RPC"])
+        val = str(Popen(val, stdout=PIPE, shell=True).communicate()[0]).strip()
+        update_ip, sep, update_port = val.partition(":")
+
+        base_ip = sep = base_port = None
+        if "advertise_addrs" in boot_config and "serf_rpc" in boot_config["advertise_addrs"]:
+            base_val = boot_config["advertise_addrs"]["serf_rpc"]
+            base_ip,  sep, base_port = base_val.partition(":")
+
+        update_ip = update_ip if update_ip != "" else base_ip
+        update_port = update_port if update_port != "" else base_port
+        boot_config["advertise_addrs"]["serf_rpc"] = update_ip + ":" + update_port
+
+
+    if is_enable(environ=environ, key="CONSUL_EX_ADVERTISE_ADDR_WAN"):
+        val = get_str(environ["CONSUL_EX_ADVERTISE_ADDR_WAN"])
+        val = str(Popen(val, stdout=PIPE, shell=True).communicate()[0]).strip()
         boot_config["advertise_addr_wan"] = val
 
-    val = get_value(config=environ, key="CONSUL_ATLAS_ACL_TOKEN")
-    if val is not None:
-        boot_config["atlas_acl_token"] = val
-
-    val = get_value(config=environ, key="CONSUL_ATLAS_INFRASTRUCTURE")
-    if val is not None:
-        boot_config["atlas_infrastructure"] = val
-
-    val = get_value(config=environ, key="CONSUL_ATLAS_JOIN")
-    if val is not None:
-        boot_config["atlas_join"] = val
-
-    val = get_value(config=environ, key="CONSUL_ATLAS_TOKEN")
-    if val is not None:
-        boot_config["atlas_token"] = val
-
-    val = get_value(config=environ, key="CONSUL_ATLAS_ENDPOINT")
-    if val is not None:
-        boot_config["atlas_endpoint"] = val
-
-    val = get_bool(config=environ, key="CONSUL_BOOTSTRAP")
-    if val is not None:
-        boot_config["bootstrap"] = val
-
-    val = get_value(config=environ, key="CONSUL_BOOTSTRAP_EXPECT")
-    if val is not None:
-        boot_config["bootstrap_expect"] = val
-
-    val = get_value(config=environ, key="CONSUL_BIND_ADDR")
-    if val is not None:
-        boot_config["bind_addr"] = val
-
-    val = get_value(config=environ, key="CONSUL_CA_FILE")
-    if val is not None:
-        boot_config["ca_file"] = val
-
-    val = get_value(config=environ, key="CONSUL_CERT_FILE")
-    if val is not None:
-        boot_config["cert_file"] = val
-
-    val = get_value(config=environ, key="CONSUL_CHECK_UPDATE_INTERVAL")
-    if val is not None:
-        boot_config["check_update_interval"] = val
-
-    val = get_value(config=environ, key="CONSUL_CLIENT_ADDR")
-    if val is not None:
-        boot_config["client_addr"] = val
-
-    val = get_value(config=environ, key="CONSUL_DATACENTER")
-    if val is not None:
-        boot_config["datacenter"] = val
-
-    val = get_value(config=environ, key="CONSUL_DATA_DIR")
-    if val is not None:
-        boot_config["data_dir"] = val
-
-    val = get_bool(config=environ, key="CONSUL_DISABLE_ANONYMOUS_SIGNATURE")
-    if val is not None:
-        boot_config["disable_anonymous_signature"] = val
-
-    val = get_bool(config=environ, key="CONSUL_DISABLE_REMOTE_EXEC")
-    if val is not None:
-        boot_config["disable_remote_exec"] = val
-
-    val = get_bool(config=environ, key="CONSUL_DISABLE_UPDATE_CHECK")
-    if val is not None:
-        boot_config["disable_update_check"] = val
-
-    val = get_bool(config=environ, key="CONSUL_DNS_CONFIG_ALLOW_STALE")
-    if val is not None:
-        boot_config["dns_config"]["allow_stale"] = val
-
-    val = get_value(config=environ, key="CONSUL_DNS_CONFIG_MAX_STALE")
-    if val is not None:
-        boot_config["dns_config"]["max_stale"] = val
-
-    val = get_value(config=environ, key="CONSUL_DNS_CONFIG_NODE_TTL")
-    if val is not None:
-        boot_config["dns_config"]["node_ttl"] = val
-
-    val = get_kv_list(config=environ, key="CONSUL_DNS_CONFIG_SERVICE_TTL")
-    if val is not None:
-        boot_config["dns_config"]["service_ttl"] = val
-
-    val = get_bool(config=environ, key="CONSUL_DNS_CONFIG_ENABLE_TRUNCATE")
-    if val is not None:
-        boot_config["dns_config"]["enable_truncate"] = val
-
-    val = get_bool(config=environ, key="CONSUL_DNS_CONFIG_ONLY_PASSING")
-    if val is not None:
-        boot_config["dns_config"]["only_passing"] = val
-
-    val = get_value(config=environ, key="CONSUL_DOMAIN")
-    if val is not None:
-        boot_config["domain"] = val
-
-    val = get_bool(config=environ, key="CONSUL_ENABLE_DEBUG")
-    if val is not None:
-        boot_config["enable_debug"] = val
-
-    val = get_bool(config=environ, key="CONSUL_ENABLE_SYSLOG")
-    if val is not None:
-        boot_config["enable_syslog"] = val
-
-    val = get_value(config=environ, key="CONSUL_ENCRYPT")
-    if val is not None:
-        boot_config["encrypt"] = val
-
-    val = get_value(config=environ, key="CONSUL_KEY_FILE")
-    if val is not None:
-        boot_config["key_file"] = val
-
-    val = get_kv_list(config=environ, key="CONSUL_HTTP_API_RESPONSE_HEADERS")
-    if val is not None:
-        boot_config["http_api_response_headers"] = val
-
-    val = get_bool(config=environ, key="CONSUL_LEAVE_ON_TERMINATE")
-    if val is not None:
-        boot_config["leave_on_terminate"] = val
-
-    val = get_value(config=environ, key="CONSUL_LOG_LEVEL")
-    if val is not None:
-        boot_config["log_level"] = val
-
-    val = get_value(config=environ, key="CONSUL_NODE_NAME")
-    if val is not None:
-        boot_config["node_name"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_DNS")
-    if val is not None:
-        boot_config["ports"]["dns"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_HTTP")
-    if val is not None:
-        boot_config["ports"]["http"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_HTTPS")
-    if val is not None:
-        boot_config["ports"]["https"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_RPC")
-    if val is not None:
-        boot_config["ports"]["rpc"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_SERF_LAN")
-    if val is not None:
-        boot_config["ports"]["serf_lan"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_SERF_WAN")
-    if val is not None:
-        boot_config["ports"]["serf_wan"] = val
-
-    val = get_value(config=environ, key="CONSUL_PORTS_SERVER")
-    if val is not None:
-        boot_config["ports"]["server"] = val
-
-    val = get_value(config=environ, key="CONSUL_PROTOCOL")
-    if val is not None:
-        boot_config["protocol"] = val
-
-    val = get_bool(config=environ, key="CONSUL_REAP")
-    if val is not None:
-        boot_config["reap"] = val
-
-    val = get_value(config=environ, key="CONSUL_RECURSOR")
-    if val is not None:
-        boot_config["recursor"] = val
-
-    val = get_list(config=environ, key="CONSUL_RECURSORS")
-    if val is not None:
-        boot_config["recursors"] = val
-
-    val = get_value(config=environ, key="CONSUL_REJOIN_AFTER_LEAVE")
-    if val is not None:
-        boot_config["rejoin_after_leave"] = val
-
-    val = get_list(config=environ, key="CONSUL_RETRY_JOIN")
-    if val is not None:
-        boot_config["retry_join"] = val
-
-    val = get_value(config=environ, key="CONSUL_RETRY_INTERVAL")
-    if val is not None:
-        boot_config["retry_interval"] = val
-
-    val = get_list(config=environ, key="CONSUL_RETRY_JOIN_WAN")
-    if val is not None:
-        boot_config["retry_join_wan"] = val
-
-    val = get_value(config=environ, key="CONSUL_RETRY_INTERVAL_WAN")
-    if val is not None:
-        boot_config["retry_interval_wan"] = val
-
-    val = get_bool(config=environ, key="CONSUL_SERVER")
-    if val is not None:
-        boot_config["server"] = val
-
-    val = get_value(config=environ, key="CONSUL_SERVER_NAME")
-    if val is not None:
-        boot_config["server_name"] = val
-
-    val = get_value(config=environ, key="CONSUL_SESSION_TTL_MIN")
-    if val is not None:
-        boot_config["session_ttl_min"] = val
-
-    val = get_bool(config=environ, key="CONSUL_SKIP_LEAVE_ON_INTERRUPT")
-    if val is not None:
-        boot_config["skip_leave_on_interrupt"] = val
-
-    val = get_value(config=environ, key="CONSUL_START_JOIN")
-    if val is not None:
-        boot_config["start_join"] = val
-
-    val = get_value(config=environ, key="CONSUL_START_JOIN_WAN")
-    if val is not None:
-        boot_config["start_join_wan"] = val
-
-    val = get_value(config=environ, key="CONSUL_STATSD_ADDR")
-    if val is not None:
-        boot_config["statsd_addr"] = val
-
-    val = get_value(config=environ, key="CONSUL_DOGSTATSD_ADDR")
-    if val is not None:
-        boot_config["dogstatsd_addr"] = val
-
-    val = get_list(config=environ, key="CONSUL_DOGSTATSD_TAGS")
-    if val is not None:
-        boot_config["dogstatsd_tags"] = val
-
-    val = get_value(config=environ, key="CONSUL_STATSITE_ADDR")
-    if val is not None:
-        boot_config["statsite_addr"] = val
-
-    val = get_value(config=environ, key="CONSUL_STATSITE_PREFIX")
-    if val is not None:
-        boot_config["statsite_prefix"] = val
-
-    val = get_value(config=environ, key="CONSUL_SYSLOG_FACILITY")
-    if val is not None:
-        boot_config["syslog_facility"] = val
-
-    val = get_bool(config=environ, key="CONSUL_UI")
-    if val is not None:
-        boot_config["ui"] = val
-
-    val = get_value(config=environ, key="CONSUL_UI_DIR")
-    if val is not None:
-        boot_config["ui_dir"] = val
-
-    val = get_value(config=environ, key="CONSUL_UNIX_SOCKETS_USER")
-    if val is not None:
-        boot_config["unix_sockets"]["user"] = val
-
-    val = get_value(config=environ, key="CONSUL_UNIX_SOCKETS_GROUP")
-    if val is not None:
-        boot_config["unix_sockets"]["group"] = val
-
-    val = get_value(config=environ, key="CONSUL_UNIX_SOCKETS_MODE")
-    if val is not None:
-        boot_config["unix_sockets"]["mode"] = val
-
-    val = get_bool(config=environ, key="CONSUL_VERIFY_INCOMING")
-    if val is not None:
-        boot_config["verify_incoming"] = val
-
-    val = get_bool(config=environ, key="CONSUL_VERIFY_OUTGOING")
-    if val is not None:
-        boot_config["verify_outgoing"] = val
-
-    val = get_bool(config=environ, key="CONSUL_VERIFY_SERVER_HOSTNAME")
-    if val is not None:
-        boot_config["verify_server_hostname"] = val
-
-    #val = get_list(config=environ, key="CONSUL_WATCHES")
-    #if val is not None:
-    #    boot_config["watches"] = val
-
+    # extra configuration =====================================================
+
+
+    # build cmd agent config_dir
+    cmd = []
+    cmd.append("agent")
+    cmd.append("-config-dir=%s" % (str(config_dir),))
+
+    # build cmd dev
+    if "dev" in boot_config:
+        if boot_config["dev"] is True:
+            cmd.append("-dev")
+        del boot_config["dev"]
 
     # save boot config
     with open(path_boot_config, "w") as wfp:
         wfp.write(json.dumps(boot_config, indent=1))
 
-
-    cmd = []
-    cmd.append("agent")
-    cmd.append("-config-dir=%s" % (str(config_dir),))
-
-    val = get_bool(config=environ, key="CONSUL_DEV")
-    if val is not None and val is True:
-        cmd.append("-dev")
 
     print "================================================================================"
     print "cmd: %s" % (str(cmd),)
@@ -444,9 +309,12 @@ def main():
         print rfp.read()
     print "================================================================================"
 
+
     sys.stdout.flush()
     sys.stderr.flush()
     os.execvp(ENTRY_CMD, [ENTRY_CMD] + cmd)
+
+
 
 
 if __name__ == "__main__":
