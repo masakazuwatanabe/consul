@@ -214,11 +214,10 @@ def main():
         config_dir = str(environ["CONSUL_CONFIG_DIR"])
     path_boot_config = os.path.join(config_dir, BOOT_CONFIG)
 
-    # load exists config.
+    # remove old config.
     boot_config = {}
     if os.path.exists(path_boot_config):
-        with open(path_boot_config, "r") as rfp:
-            boot_config = json.loads(rfp.read())
+        os.remove(path_boot_config)
 
 
     # build environment configuration.
