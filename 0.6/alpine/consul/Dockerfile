@@ -1,8 +1,8 @@
 FROM alpine
 
 
-ADD https://releases.hashicorp.com/consul/0.6.3/consul_0.6.3_linux_amd64.zip /tmp/consul.zip
-ADD https://releases.hashicorp.com/consul/0.6.3/consul_0.6.3_web_ui.zip /tmp/consul_web_ui.zip
+ADD https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip /tmp/consul.zip
+ADD https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_web_ui.zip /tmp/consul_web_ui.zip
 RUN echo "make consul." \
   && mkdir -p /var/lib/consul/config \
   && mkdir -p /var/lib/consul/data \
@@ -28,7 +28,6 @@ ENV \
   CONSUL_ACL_DATACENTER="" \
   CONSUL_ACL_DEFAULT_POLICY="" \
   CONSUL_ACL_DOWN_POLICY="" \
-  CONSUL_ACL_MASTER_TOKEN="" \
   CONSUL_ACL_MASTER_TOKEN="" \
   CONSUL_ACL_TOKEN="" \
   CONSUL_ACL_TTL="" \
@@ -95,12 +94,19 @@ ENV \
   CONSUL_SKIP_LEAVE_ON_INTERRUPT="" \
   CONSUL_START_JOIN="" \
   CONSUL_START_JOIN_WAN="" \
+  CONSUL_TELEMETRY_STATSD_ADDRESS="" \
+  CONSUL_TELEMETRY_STATSITE_ADDRESS="" \
+  CONSUL_TELEMETRY_STATSITE_PREFIX="" \
+  CONSUL_TELEMETRY_DOGSTATSD_ADDR="" \
+  CONSUL_TELEMETRY_DOGSTATSD_TAGS="" \
+  CONSUL_TELEMETRY_DISABLE_HOSTNAME="" \
   CONSUL_STATSD_ADDR="" \
-  CONSUL_DOGSTATSD_ADDR="" \
-  CONSUL_DOGSTATSD_TAGS="" \
   CONSUL_STATSITE_ADDR="" \
   CONSUL_STATSITE_PREFIX="" \
+  CONSUL_DOGSTATSD_ADDR="" \
+  CONSUL_DOGSTATSD_TAGS="" \
   CONSUL_SYSLOG_FACILITY="" \
+  CONSUL_TRANSLATE_WAN_ADDRS="" \
   CONSUL_UI="" \
   CONSUL_UI_DIR="/var/lib/consul/web_ui" \
   CONSUL_UNIX_SOCKETS_USER="" \

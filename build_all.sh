@@ -33,13 +33,13 @@ docker build -t docker.io/masakazuwatanabe/consul-server:latest-centos7 .
 ################################################################################
 # consul latest / centos 6 ver.
 ################################################################################
-cd ${DIR_CURRENT}/0.6/centos/7/consul
+cd ${DIR_CURRENT}/0.6/centos/6/consul
 docker build -t docker.io/masakazuwatanabe/consul:latest-centos6 .
 
-cd ${DIR_CURRENT}/0.6/centos/7/consul-client
+cd ${DIR_CURRENT}/0.6/centos/6/consul-client
 docker build -t docker.io/masakazuwatanabe/consul-client:latest-centos6 .
 
-cd ${DIR_CURRENT}/0.6/centos/7/consul-server
+cd ${DIR_CURRENT}/0.6/centos/6/consul-server
 docker build -t docker.io/masakazuwatanabe/consul-server:latest-centos6 .
 
 
@@ -92,7 +92,7 @@ docker build -t docker.io/masakazuwatanabe/consul:0.6-centos6 .
 cd ${DIR_CURRENT}/0.6/centos/6/consul-client
 docker build -t docker.io/masakazuwatanabe/consul-client:0.6-centos6 .
 
-cd ${DIR_CURRENT}/0.6/centos/6/consul-server:0.6
+cd ${DIR_CURRENT}/0.6/centos/6/consul-server
 docker build -t docker.io/masakazuwatanabe/consul-server:0.6-centos6 .
 
 
